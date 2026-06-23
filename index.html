@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aulieata Smart AI Ecosystem</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        /* Глобальная палитра - Светлая тема */
+        :root {
+            --bg-main: #ffffff;
+            --bg-chat-container: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary: #1e40af;
+            --primary-light: #2563eb;
+            --border-color: #e2e8f0;
+            --chat-user-bg: #2563eb;
+            --success: #10b981;
+            --card-bg: #ffffff;
+        }
+
+        /* Автоматическая палитра - Темная тема */
+        body.dark-theme {
+            --bg-main: #0f172a;
+            --bg-chat-container: #1e293b;
+            --bg-sidebar: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --border-color: #334155;
+            --chat-user-bg: #2563eb;
+            --card-bg: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        body {
+            background-color: var(--bg-chat-container);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- ШАПКА САЙТА (HEADER) --- */
+        header {
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+            z-index: 10;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .logo-icon-container {
+            background: #1e40af; color: white; width: 42px; height: 42px;
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        }
+        .header-title h1 { font-size: 16px; font-weight: 700; color: var(--text-main); line-height: 1.2; }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+
+        .user-profile-tag {
+            font-size: 13.5px; font-weight: 600; color: var(--text-main); background: var(--card-bg);
+            border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer;
+        }
+        .user-profile-tag:hover { background: var(--bg-chat-container); }
+
+        .admin-badge { background: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+        .gov-badge { background: #fef3c7; color: #b45309; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+        .citizen-badge { background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+
+        .action-header-btn {
+            background: var(--card-bg); border: 1px solid var(--border-color); cursor: pointer;
+            width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted);
+        }
+        .action-header-btn:hover { color: var(--text-main); background: var(--bg-chat-container); }
+
+        /* --- ОСНОВНОЙ КОНТЕНТ --- */
+        .app-container { display: flex; flex: 1; height: calc(100vh - 70px); overflow: hidden; }
+
+        aside {
+            width: 300px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color);
+            padding: 24px 16px; display: flex; flex-direction: column; gap: 28px; overflow-y: auto;
+        }
+        .sidebar-section { display: flex; flex-direction: column; gap: 6px; }
+        .sidebar-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 6px; padding-left: 8px; }
+        .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+
+        .menu-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 14px; font-size: 14px; font-weight: 500;
+            color: var(--text-muted); border-radius: 12px; cursor: pointer; border: 1px solid transparent;
+        }
+        .menu-item:hover { background: var(--bg-chat-container); color: var(--primary-light); }
+        .menu-item.active { background: #f0f5ff; color: #1e40af; font-weight: 600; border: 1px solid #dbeafe; border-left: 4px solid #1e40af; }
+        body.dark-theme .menu-item.active { background: #1e293b; color: #3b82f6; border-color: #334155; border-left-color: #3b82f6; }
+
+        main { flex: 1; display: flex; flex-direction: column; background: var(--bg-chat-container); position: relative; }
+        .view-section { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 32px 40px; }
+        .view-section.active-view { display: flex; }
+
+        .base-knowledge-card {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-left: 4px solid var(--primary-light);
+            padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        }
+        .base-knowledge-card h4 { font-size: 13px; font-weight: 700; color: var(--primary-light); text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+        .base-knowledge-card p { font-size: 14px; color: var(--text-main); line-height: 1.5; }
+
+        .chat-container { display: flex; flex-direction: column; gap: 24px; flex: 1; overflow-y: auto; padding-right: 8px; }
+        .system-status-toast { align-self: center; background: var(--card-bg); border: 1px solid var(--border-color); padding: 8px 20px; border-radius: 30px; font-size: 12px; font-weight: 500; color: var(--text-muted); }
+        .message-row { display: flex; width: 100%; position: relative; }
+        .message-row.user { justify-content: flex-end; }
+        .message-row.assistant { justify-content: flex-start; }
+        .message-text { max-width: 85%; padding: 14px 20px; border-radius: 16px; font-size: 14.5px; line-height: 1.6; position: relative; }
+        .message-row.user .message-text { background: var(--chat-user-bg); color: #ffffff; border-bottom-right-radius: 4px; font-weight: 500; }
+        .message-row.assistant .message-text { background: var(--card-bg); border: 1px solid var(--border-color); border-bottom-left-radius: 4px; padding: 22px 55px 22px 24px; color: var(--text-main); box-shadow: 0 4px 16px rgba(15, 23, 42, 0.02); }
+
+        .msg-bookmark-btn {
+            position: absolute; right: 18px; top: 20px; background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+        }
+        .msg-bookmark-btn:hover, .msg-bookmark-btn.bookmarked { color: #e11d48; }
+        .msg-bookmark-btn .material-symbols-outlined { font-variation-settings: 'FILL' 0; }
+        .msg-bookmark-btn.bookmarked .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+
+        .ai-p { margin-bottom: 12px; color: var(--text-main); }
+        .ai-ol { margin: 8px 0 14px 24px; color: var(--text-main); }
+        .ai-li { margin-bottom: 8px; color: var(--text-main); }
+
+        .bottom-controls-container { padding: 16px 40px 32px 40px; display: flex; flex-direction: column; gap: 14px; background: var(--bg-chat-container); border-top: 1px solid var(--border-color); }
+        .suggestion-chips-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .chip { background: var(--card-bg); border: 1px solid var(--border-color); padding: 9px 18px; border-radius: 20px; font-size: 13.5px; font-weight: 500; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .chip:hover { border-color: var(--primary-light); background: var(--bg-main); }
+        .input-bar-wrapper { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 20px; display: flex; align-items: center; padding: 6px 14px 6px 24px; }
+        .chat-input { flex: 1; border: none; outline: none; font-size: 15px; padding: 12px 0; background: transparent; color: var(--text-main); }
+        .send-message-btn { background: none; border: none; cursor: pointer; padding: 10px; color: var(--primary-light); display: flex; align-items: center; }
+
+        #mapContainer { width: 100%; height: 500px; border-radius: 16px; border: 1px solid var(--border-color); margin-top: 15px; z-index: 1; }
+
+        .bookmark-grid, .history-container { display: flex; flex-direction: column; gap: 16px; width: 100%; margin-top: 15px; }
+        .item-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 22px; position: relative; }
+        .item-meta { font-size: 11px; font-weight: 700; color: var(--primary-light); text-transform: uppercase; margin-bottom: 10px; }
+        .remove-btn { position: absolute; right: 18px; top: 18px; background: none; border: none; cursor: pointer; color: var(--text-muted); }
+        .remove-btn:hover { color: #e11d48; }
+        .mock-view-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 40px; display: flex; flex-direction: column; gap: 20px; text-align: center; justify-content: center; align-items: center; color: var(--text-muted); }
+
+        /* --- МОДАЛЬНОЕ ОКНО ЭЦП --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .eds-card { background: var(--card-bg); width: 480px; border-radius: 24px; padding: 36px; border: 1px solid var(--border-color); color: var(--text-main); }
+        .eds-card h2 { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+        .eds-sub { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px; }
+        .ncalayer-status-banner { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 12px 16px; border-radius: 12px; font-size: 13.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+        body.dark-theme .ncalayer-status-banner { background: #065f46; color: #a7f3d0; border-color: #047857; }
+        .eds-label { font-size: 13.5px; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 8px; }
+        .eds-select, .eds-input-password { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-chat-container); color: var(--text-main); font-size: 14px; outline: none; margin-bottom: 20px; }
+        .eds-file-mock-box { background: var(--bg-chat-container); border: 1px solid var(--border-color); padding: 14px 16px; border-radius: 12px; font-size: 13.5px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; cursor: pointer; }
+        .eds-submit-btn { width: 100%; background: var(--success); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; }
+        .close-modal-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 600; margin-top: 14px; width: 100%; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <div class="logo-icon-container"><span class="material-symbols-outlined">corporate_fare</span></div>
+            <div class="header-title">
+                <h1>Aulieata Smart AI Ecosystem</h1>
+                <p>Интеллектуальный кластер Жамбылской области v3.0</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <button id="loginButton" class="user-profile-tag" onclick="openAuthModal()"><span class="material-symbols-outlined">vpn_key</span> Войти по ЭЦП</button>
+            <div id="userBadge" class="user-profile-tag" style="display:none;"></div>
+            <button class="action-header-btn" title="Сменить тему" onclick="toggleTheme()"><span class="material-symbols-outlined" id="themeIcon">dark_mode</span></button>
+            <button id="logoutButton" class="action-header-btn" title="Выйти" style="display:none;" onclick="handleLogout()"><span class="material-symbols-outlined">logout</span></button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Интеллектуальный поиск</div>
+                <ul class="sidebar-menu">
+                    <li class="menu-item active" onclick="navigateToSection(this, 'chat', 'Общие положения')"><span class="material-symbols-outlined">home</span>Общие положения</li>
+                    <li class="menu-item" onclick="navigateToSection(this, 'chat', 'e-Jambyl')"><span class="material-symbols-outlined">language</span>Сервисы e-Jambyl</li>
+                    <li class="menu-item" onclick="navigateToSection(this, 'chat', 'Жер кодексі')"><span class="material-symbols-outlined">gavel</span>Земельный Кодекс РК</li>
+                    <li class="menu-item" onclick="navigateToSection(this, 'chat', 'Социальная Защита')"><span class="material-symbols-outlined">diversity_3</span>Социальная Защита</li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Геоаналитика</div>
+                <ul class="sidebar-menu">
+                    <li class="menu-item" onclick="navigateToSection(this, 'map', 'Геоаналитика')"><span class="material-symbols-outlined">map</span>Интерактивная карта</li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Кабинет & Системные модули</div>
+                <ul class="sidebar-menu">
+                    <li class="menu-item" onclick="navigateToSection(this, 'history', 'История')"><span class="material-symbols-outlined">history</span>История запросов</li>
+                    <li class="menu-item" onclick="navigateToSection(this, 'bookmarks', 'Закладки')"><span class="material-symbols-outlined">bookmark</span>Закладки</li>
+                    <li class="menu-item" onclick="navigateToSection(this, 'admin', 'Админка')"><span class="material-symbols-outlined">admin_panel_settings</span>Панель Администратора</li>
+                </ul>
+            </div>
+        </aside>
+
+        <main>
+            <div id="viewChat" class="view-section active-view">
+                <div class="base-knowledge-card" id="knowledgeCard">
+                    <h4 id="knowledgeTitle"><span class="material-symbols-outlined">menu_book</span> База знаний: Общие положения</h4>
+                    <p id="knowledgeContent">Загрузка данных...</p>
+                </div>
+                <div class="chat-container" id="chatContainer">
+                    <div class="system-status-toast">Экосистема Aulieata Smart AI развернута в штатном режиме.</div>
+                </div>
+            </div>
+
+            <div id="viewMap" class="view-section">
+                <h2>Интерактивная ГИС-карта Жамбылской области</h2>
+                <p style="color: var(--text-muted);">Визуализация пространственных данных, кадастровых зон и инфраструктуры г. Тараз из базы знаний.</p>
+                <div id="mapContainer"></div>
+            </div>
+
+            <div id="viewHistory" class="view-section">
+                <h2>История поисковых сессий</h2>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Хронология ваших диалогов со встроенным ИИ-модулем.</p>
+                <div class="history-container" id="historyWrapper"></div>
+            </div>
+
+            <div id="viewBookmarks" class="view-section">
+                <h2>Сохраненные ответы ИИ</h2>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Локально сохраненные выгрузки нормативно-правовых актов.</p>
+                <div class="bookmark-grid" id="bookmarksContainer"></div>
+            </div>
+
+            <div id="viewAdmin" class="view-section">
+                <h2>Консоль Управления Системой (Администратор)</h2>
+                <div class="base-knowledge-card" style="border-left-color: #e11d48; margin-top: 15px;">
+                    <h4><span class="material-symbols-outlined">shield</span> Статус безопасности ядра</h4>
+                    <p>Доступ авторизован по государственному ключу ЭЦП: <strong>AUTH_RSA_051010550123_Atakul.p12</strong></p>
+                </div>
+                <div class="mock-view-card" style="min-height: 200px; display: block; text-align: left; padding: 25px;">
+                    <h3 style="margin-bottom: 15px;">Логи нейросетевых транзакций</h3>
+                    <code style="display:block; background: var(--bg-chat-container); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px;">
+                        [2026-06-23 16:40:12] INFO: Верификация RAG-контекста для e-Jambyl пройдена.<br>
+                        [2026-06-23 16:41:05] SUCCESS: Синхронизация с базой данных Акимата Жамбылской области завершена.<br>
+                        [2026-06-23 16:42:00] WARN: Обработка запроса по ст. 43 Земельного Кодекса РК без задержек.
+                    </code>
+                </div>
+            </div>
+
+            <div class="bottom-controls-container" id="bottomControls">
+                <div class="suggestion-chips-row">
+                    <div class="chip" onclick="useSuggestion('Как получить земельный участок под ИЖС?')"><span class="material-symbols-outlined">location_on</span>Земельные участки ИЖС</div>
+                    <div class="chip" onclick="useSuggestion('Где находятся адреса ЦОН города Тараз?')"><span class="material-symbols-outlined">account_balance</span>Адреса ЦОН</div>
+                    <div class="chip" onclick="useSuggestion('Какие выплаты положены по Социальному Кодексу?')"><span class="material-symbols-outlined">group</span>Пособия кодекса</div>
+                </div>
+                <div class="input-bar-wrapper">
+                    <input type="text" id="userInput" class="chat-input" placeholder="Спросите нейросеть по законодательству..." onkeydown="if(event.key === 'Enter') sendMessage()">
+                    <button class="action-icon-btn" title="Голосовой ввод" onclick="useSuggestion('Сәлем!')" style="background:none; border:none; cursor:pointer; color:var(--text-muted); margin-right:8px;"><span class="material-symbols-outlined">mic</span></button>
+                    <button class="send-message-btn" title="Отправить" onclick="sendMessage()"><span class="material-symbols-outlined">arrow_forward</span></button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="authModal" style="display: none;">
+        <div class="eds-card">
+            <h2>Авторизация через ЭЦП</h2>
+            <div class="eds-sub">Национальный удостоверяющий центр РК</div>
+            <div class="ncalayer-status-banner"><span class="material-symbols-outlined">verified_user</span><span>NCALayer подключен (127.0.0.1:13579)</span></div>
+
+            <label class="eds-label">Выберите сертификат НУЦ РК:</label>
+            <select class="eds-select" id="edsProfileSelect" onchange="updateMockFileAndState()">
+                <option value="admin">AUTH_RSA_051010550123_Atakul.p12 (Администратор)</option>
+                <option value="gov">AUTH_RSA_090823410456_ZhambylGov.p12 (Госслужащий)</option>
+                <option value="citizen">AUTH_RSA_061214390789_Citizen.p12 (Гражданин)</option>
+            </select>
+
+            <input type="file" id="realEdsFileInput" accept=".p12" style="display: none;" onchange="handleRealFileSelection(this)">
+            <label class="eds-label">Файл ключа ЭЦП (.p12):</label>
+            <div class="eds-file-mock-box" onclick="triggerFilePicker()"><span class="material-symbols-outlined">upload_file</span><span id="mockFileNameDisplay">Выбран: AUTH_RSA_051010550123.p12</span></div>
+
+            <label class="eds-label">Введите пароль:</label>
+            <input type="password" id="edsPasswordInput" class="eds-input-password" value="123456">
+
+            <button class="eds-submit-btn" onclick="submitEdsAuth()"><span class="material-symbols-outlined">vpn_key</span> Войти по ключу ЭЦП</button>
+            <button class="close-modal-btn" onclick="closeAuthModal()">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        let currentCategory = "Общие положения";
+        let userRole = "guest";
+        let map = null;
+
+        const baseKnowledge = {
+            guest: {
+                "Общие положения": "Внутренняя база открытых НПА Жамбылской области. Доступ ограничен публичными регламентами.",
+                "e-Jambyl": "Информационные сервисы портала электронного акимата. Доступно ознакомление с картой.",
+                "Жер кодексі": "Общие статьи Земельного Кодекса РК для физических лиц.",
+                "Социальная Защита": "Базовая справочная информация по государственным пособиям."
+            },
+            admin: {
+                "Общие положения": "💼 РЕЖИМ АДМИНИСТРАТОРА: Полный доступ к инфраструктуре, логам транзакций и промптам.",
+                "e-Jambyl": "🔧 Контроль интеграционных шлюзов e-Jambyl со Smart Bridge РК.",
+                "Жер кодексі": "📜 Выгрузка архивных решений Акимата Жамбылской области по земельным фондам.",
+                "Социальная Защита": "📊 Редактирование распределения социальных бюджетов региона."
+            },
+            gov: {
+                "Общие положения": "🏛️ ВЕДОМСТВЕННЫЙ ДОСТУП: Обработка официальных обращений в Е-Отыныш.",
+                "e-Jambyl": "📱 Панель согласования и верификации входящих заявок госслужащими.",
+                "Жер кодексі": "🚜 Служебный классификатор целевого назначения земель Жамбылской области.",
+                "Социальная Защита": "📋 Реестр получателей адресной социальной помощи (АСП) по г. Тараз."
+            },
+            citizen: {
+                "Общие положения": "👤 ЛИЧНЫЙ КАБИНЕТ ГРАЖДАНИНА: Справочник льгот и документов для жителей.",
+                "e-Jambyl": "📩 Подача прямых электронных заявлений в аппарат Акима города Тараз.",
+                "Жер кодексі": "🏡 Регламент постановки граждан в очередь на 10 соток под ИЖС.",
+                "Социальная Защита": "👶 Автоматический расчет пособий в рамках Социального Кодекса РК."
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateBaseKnowledgeUI();
+            renderBookmarks();
+            renderHistory();
+            initGISMap();
+        });
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-theme');
+            document.getElementById('themeIcon').innerText = isDark ? 'light_mode' : 'dark_mode';
+        }
+
+        function initGISMap() {
+            map = L.map('mapContainer').setView([42.9026, 71.3656], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+
+            L.marker([42.9015, 71.3780]).addTo(map).bindPopup("<b>ЦОН №1</b><br>ул. Толе би, 17");
+            L.marker([42.8750, 71.4000]).addTo(map).bindPopup("<b>Массив Тектурмас</b><br>Выделенные свободные участки под ИЖС");
+            L.marker([42.9055, 71.3620]).addTo(map).bindPopup("<b>Акимат Жамбылской области</b><br>Центральный аппарат управления");
+        }
+
+        function navigateToSection(element, viewId, categoryName) {
+            if (viewId === 'admin' && userRole !== 'admin') {
+                alert("Доступ заблокирован: Требуется авторизация ЭЦП Администратора.");
+                openAuthModal();
+                return;
+            }
+
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active-view'));
+            const bottomControls = document.getElementById('bottomControls');
+
+            if (viewId === 'chat') {
+                document.getElementById('viewChat').classList.add('active-view');
+                bottomControls.style.display = 'flex';
+                currentCategory = categoryName;
+                updateBaseKnowledgeUI();
+            } else {
+                document.getElementById('view' + viewId.charAt(0).toUpperCase() + viewId.slice(1)).classList.add('active-view');
+                bottomControls.style.display = 'none';
+
+                if (viewId === 'map' && map) {
+                    setTimeout(() => { map.invalidateSize(); }, 200);
+                } else if (viewId === 'bookmarks') {
+                    renderBookmarks();
+                } else if (viewId === 'history') {
+                    renderHistory();
+                }
+            }
+        }
+
+        function updateBaseKnowledgeUI() {
+            const titleEl = document.getElementById('knowledgeTitle');
+            const contentEl = document.getElementById('knowledgeContent');
+            titleEl.innerHTML = `<span class="material-symbols-outlined">menu_book</span> База знаний: ${currentCategory}`;
+            contentEl.innerText = baseKnowledge[userRole][currentCategory] || baseKnowledge['guest'][currentCategory];
+        }
+
+        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
+        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
+        function triggerFilePicker() { document.getElementById('realEdsFileInput').click(); }
+        function handleRealFileSelection(input) {
+            if (input.files && input.files[0]) document.getElementById('mockFileNameDisplay').innerText = "Выбран: " + input.files[0].name;
+        }
+
+        function updateMockFileAndState() {
+            const selectValue = document.getElementById('edsProfileSelect').value;
+            const display = document.getElementById('mockFileNameDisplay');
+            display.innerText = "Выбран: AUTH_RSA_" + (selectValue === 'admin' ? '051010550123' : selectValue === 'gov' ? '090823410456' : '061214390789') + ".p12";
+        }
+
+        function submitEdsAuth() {
+            const selectedRole = document.getElementById('edsProfileSelect').value;
+            userRole = selectedRole;
+            closeAuthModal();
+            updateBaseKnowledgeUI();
+
+            document.getElementById('loginButton').style.display = 'none';
+            const badge = document.getElementById('userBadge');
+
+            let badgeClass = "admin-badge"; let roleText = "Админ";
+            if (userRole === 'gov') { badgeClass = "gov-badge"; roleText = "Госслужащий"; }
+            else if (userRole === 'citizen') { badgeClass = "citizen-badge"; roleText = "Гражданин"; }
+
+            badge.innerHTML = `<span>Атакул Ляззат</span> <span class="${badgeClass}">${roleText}</span>`;
+            badge.style.display = 'flex';
+            document.getElementById('logoutButton').style.display = 'flex';
+        }
+
+        function handleLogout() {
+            userRole = "guest";
+            updateBaseKnowledgeUI();
+            document.getElementById('userBadge').style.display = 'none';
+            document.getElementById('logoutButton').style.display = 'none';
+            document.getElementById('loginButton').style.display = 'flex';
+            navigateToSection(document.querySelector('.menu-item'), 'chat', 'Общие положения');
+        }
+
+        // --- МОДЕРНИЗИРОВАННЫЙ ИИ-ОТВЕТЧИК (ВЫСОКАЯ ДЕТАЛИЗАЦИЯ И РАСШИРЕННЫЙ ФОРМАТ) ---
+        function generateAIAnswer(queryText, role, category) {
+            const text = queryText.toLowerCase();
+
+            if (text.includes('сәлем') || text.includes('привет')) {
+                return `### Интеллектуальная Экосистема Aulieata Smart AI
+                Приветствую вас! Я специализированная языковая модель, интегрированная с базой данных Государственного Аппарата Акимата Жамбылской области и ИС «e-Jambyl».
+
+                Я настроена для предоставления подробных юридических, кадастровых и социальных справок в режиме реального времени на основании действующего законодательства Республики Казахстан.
+
+                ### Доступные Направления Консультаций:
+                1. **Земельные Правоотношения (ИЖС/ЛПХ)**: Детализация по статьям 43, 44-1 Земельного Кодекса РК, регламенты распределения свободных фондов г. Тараз.
+                2. **Инфраструктура и Госуслуги (ЦОН)**: Адреса, график работы, электронное бронирование очередей, логистика.
+                3. **Социальная Поддержка**: Пособия, расчет критериев Адресной Социальной Помощи (АСП), интеграция с Цифровой Картой Семьи (ЦКС).
+
+                Пожалуйста, задайте конкретный вопрос для формирования подробной выгрузки нормативно-правовых актов.`;
+            }
+
+            if (text.includes('жер') || text.includes('ижс')) {
+                if (role === 'admin' || role === 'gov') {
+                    return `### Экспертный Кадастровый Отчет (Служебный Доступ)
+                    Текущая сессия авторизована под ведомственным профилем [Роль: ${role === 'admin' ? 'Администратор' : 'Госслужащий'}]. Проведен автоматический сквозной анализ пространственных данных ГИС Жамбылской области.
+
+                    ### Результаты Анализа Базы Данных:
+                    1. **Верификация наложений**: По координатам целевых секторов массива «Тектурмас» пересечений границ частных собственников и государственных лесных или водоохранных зон не обнаружено.
+                    2. **Свободный земельный фонд**: Зафиксировано 14 свободных участков под индивидуальное жилищное строительство (ИЖС), доступных для перевода из государственной собственности. Данные актуализированы в соответствии с последними решениями Земельной комиссии г. Тараз.
+                    3. **Синхронизация со Smart Bridge**: Вся техническая документация и сформированные XML-пакеты полностью подготовлены к автоматическому шлюзованию в Единую Информационную Систему государственного органа «Е-Отыныш».
+
+                    ### Рекомендованные Действия:
+                    Для инициации процесса распределения участка необходимо подтвердить статус ЭЦП-сертификата в закрытом реестре и отправить пакет на ведомственное согласование в Управление земельных отношений Акимата Жамбылской области. Срок регламентного ответа составляет 15 рабочих дней.`;
+                } else {
+                    return `### Юридическая Инструкция: Получение Земли под ИЖС в Жамбылской области
+                    В соответствии со **статьей 43 и 44-1 Земельного Кодекса Республики Казахстан**, каждый гражданин имеет право на бесплатное получение земельного участка площадью 10 соток (0,1 га) под индивидуальное жилищное строительство.
+
+                    ### Пошаговый Регламент Подачи Заявки:
+                    1. **Электронная Авторизация**: Перейдите на официальный веб-портал электронного правительства eGov.kz либо на региональный портал «e-Jambyl». Авторизуйтесь посредством актуального ключа ЭЦП (AUTH_RSA).
+                    2. **Подача Заявления**: В разделе «Земельные отношения» выберите услугу «Постановка на очередь на получение земельного участка под ИЖС». Заполните интерактивную форму, указав регион (г. Тараз или районы Жамбылской области).
+                    3. **Регистрация в Реестре**: Система автоматически регистрирует заявление в Едином государственном реестре. Номер вашей очереди фиксируется в защищенной блокчейн-базе данных, что исключает несанкционированное изменение очередности.
+                    4. **Мониторинг Статуса**: Вы можете круглосуточно отслеживать движение вашей очереди через личный кабинет во вкладке «Кабинет / Мои заявки».
+
+                    ### Важные Ограничения и Сроки:
+                    1. **Повторность**: Участок предоставляется бесплатно только один раз в жизни. Если ранее на ваше имя оформлялась бесплатная земля от государства, система автоматически выдаст отказ.
+                    2. **Инфраструктура**: Согласно закону, фактическое выделение участка в натуре происходит только после того, как к данному жилому массиву подведены базовые коммуникации (электричество, водоснабжение). Срок ожидания зависит от генерального плана развития Акимата.`;
+                }
+            }
+
+            if (text.includes('цон') || text.includes('адрес')) {
+                return `### Справочник Инфраструктуры: Центры Обслуживания Населения (ЦОН) г. Тараз
+                Для прохождения очной верификации, получения архивных документов на бумажных носителях или активации некоторых видов ЭЦП, на территории города Тараз функционируют специализированные филиалы НАО «Государственная корпорация «Правительство для граждан».
+
+                ### Действующие Адреса и Специализация Филиалов:
+                1. **Филиал №1 (Центральный)**: г. Тараз, ул. Толе би, дом 17. Обслуживает физические и юридические лица по всем общим вопросам (регистрация прав собственности, документирование, выдача паспортов, ЗАГС).
+                2. **Филиал №2 (Специализированный АвтоЦОН)**: г. Тараз, ул. Абая, дом 24. Специализируется исключительно на регистрации транспортных средств, сдаче теоретических и практических экзаменов, а также выдаче и замене водительских удостоверений.
+                3. **Филиал №3 (Городской отдел)**: г. Тараз, ул. Желтоксан, дом 14. Ориентирован на выдачу архивных справок, регистрацию юридических лиц и оказание социальных услуг.
+
+                ### Регламент Работы и Оптимизация Визита:
+                1. **График**: Все филиалы работают с понедельника по пятницу, с 09:00 до 18:00 (дежурные ЦОНы до 20:00) без перерыва на обед. Суббота — с 09:00 до 13:00. Воскресенье — выходной.
+                2. **Электронная очередь**: Во избежание длительного ожидания, настоятельно рекомендуется забронировать точное время визита заранее. Это можно сделать через чат-бот Telegram (@eGovKzBot), мобильное приложение eGov Mobile или по номеру единого контакт-центра 1414.`;
+            }
+
+            if (text.includes('выплат') || text.includes('пособи') || text.includes('социал')) {
+                return `### Комплексный Анализ Социальной Поддержки в Жамбылской Области
+                Начисление выплат, субсидий и пособий на территории региона жестко регламентируется нормами **Социального Кодекса Республики Казахстан**. Система автоматически интегрирована со всеми базами данных Министерства труда и социальной защиты населения РК.
+
+                ### Основные Виды Государственных Выплат:
+                1. **Адресная Социальная Помощь (АСП)**: Предоставляется в виде денежной помощи гражданам (семьям) со среднедушевым доходом, не превышающим черту бедности, установленную по Жамбылской области. Черта бедности рассчитывается ежеквартально как 70% от регионального прожиточного минимума. Включает в себя безусловную (для нетрудоспособных) и обусловленную (при наличии трудоспособных членов семьи, готовых к трудоустройству) помощь.
+                2. **Пособия по Уходу за Ребенком**: Включают единовременную выплату на рождение ребенка (размер зависит от очередности ребенка в семье и привязан к МРП), а также ежемесячное пособие по уходу за ребенком до достижения им возраста полутора (1.5) лет как для застрахованных (из ГФСС), так и для неработающих граждан.
+                3. **Поддержка Многодетных Семей**: Ежемесячное государственное пособие, назначаемое семьям, имеющим 4-х и более совместно проживающих несовершеннолетних детей, вне зависимости от уровня их общего семейного дохода.
+
+                ### Алгоритм Подачи Документов:
+                1. **Цифровая Карта Семьи**: В рамках проактивного формата система автоматически анализирует ваш профиль. Если вам положено пособие, на ваш мобильный телефон поступит SMS от номера 1414. Вам достаточно ответить на него согласием, и выплата будет назначена автоматически без сбора документов.
+                2. **Традиционный Формат**: Если данные в системе отсутствуют, необходимо обратиться с заявлением в Отдел занятости и социальных программ Акимата г. Тараз (или районные отделы) либо подать электронное заявление через личный кабинет eGov. Срок рассмотрения пакета документов и вынесения решения — до 10 рабочих дней.`;
+            }
+
+            return `### Аналитическое Заключение Модуля Aulieata Smart AI
+            Ваш текстовый запрос: «${queryText}» был успешно обработан в контексте выбранного направления: «${category}».
+
+            ### Результаты Проверки Контекста:
+            1. Проведен сквозной семантический поиск по нормативно-правовым актам (НПА) Жамбылской области. Критических системных конфликтов или изменений в регламентах по ключевым словам не зафиксировано.
+            2. Для получения развернутой пошаговой инструкции, пожалуйста, перефразируйте вопрос, употребив одно из базовых отраслевых ключевых слов: **Земля (или ИЖС)**, **ЦОН (или Адреса)**, **Пособия (или Выплаты)**.
+
+            Модуль ИИ функционирует стабильно, ошибок буферизации данных не выявлено.`;
+        }
+
+        // --- УЛУЧШЕННЫЙ ПАРСЕР СИНТАКСИСА С ОТОБРАЖЕНИЕМ ЗАГОЛОВКОВ ---
+        function formatAIResponse(text) {
+            if (!text) return "";
+            const lines = text.split('\n');
+            let htmlResult = "";
+            let inList = false;
+
+            lines.forEach(line => {
+                let trimmed = line.trim();
+                if (!trimmed) return;
+
+                // Парсинг заголовков из генератора
+                if (trimmed.startsWith('###')) {
+                    if (inList) { htmlResult += '</ol>'; inList = false; }
+                    htmlResult += `<h4 style="margin: 18px 0 8px 0; color: var(--primary-light); font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:0.02em;">${trimmed.replace('###', '').trim()}</h4>`;
+                    return;
+                }
+
+                trimmed = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                const numListMatch = trimmed.match(/^(\d+)\.\s(.*)/);
+
+                if (numListMatch) {
+                    if (!inList) { htmlResult += '<ol class="ai-ol">'; inList = true; }
+                    htmlResult += `<li class="ai-li">${numListMatch[2]}</li>`;
+                } else {
+                    if (inList) { htmlResult += '</ol>'; inList = false; }
+                    htmlResult += `<p class="ai-p">${trimmed}</p>`;
+                }
+            });
+
+            if (inList) htmlResult += '</ol>';
+            return htmlResult;
+        }
+
+        function useSuggestion(text) {
+            document.getElementById('userInput').value = text;
+            sendMessage();
+        }
+
+        function saveToHistory(userText, aiText) {
+            let history = JSON.parse(localStorage.getItem('aulieata_history')) || [];
+            history.unshift({ user: userText, ai: aiText, category: currentCategory, date: new Date().toLocaleString('ru-RU') });
+            localStorage.setItem('aulieata_history', JSON.stringify(history));
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyWrapper');
+            const history = JSON.parse(localStorage.getItem('aulieata_history')) || [];
+            if (history.length === 0) {
+                container.innerHTML = `<div class="mock-view-card">История поисковых сессий пока пуста. Отправьте запросы в чат.</div>`;
+                return;
+            }
+            container.innerHTML = history.map(h => `
+                <div class="item-card">
+                    <div class="item-meta">${h.category} • ${h.date}</div>
+                    <p style="margin-bottom:8px; border-bottom: 1px dashed var(--border-color); padding-bottom: 6px;"><strong>Вы:</strong> ${h.user}</p>
+                    <div>${formatAIResponse(h.ai)}</div>
+                </div>
+            `).join('');
+        }
+
+        function sendMessage() {
+            const inputEl = document.getElementById('userInput');
+            const messageText = inputEl.value.trim();
+            if (!messageText) return;
+
+            const chatContainer = document.getElementById('chatContainer');
+            const userRow = document.createElement('div');
+            userRow.className = 'message-row user';
+            userRow.innerHTML = `<div class="message-text">${messageText}</div>`;
+            chatContainer.appendChild(userRow);
+
+            inputEl.value = "";
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            const assistantRow = document.createElement('div');
+            assistantRow.className = 'message-row assistant';
+            const textNode = document.createElement('div');
+            textNode.className = 'message-text';
+            textNode.innerHTML = "<em>Интеллектуальный поиск Aulieata AI формирует глубокий аналитический ответ по базам НПА...</em>";
+            assistantRow.appendChild(textNode);
+            chatContainer.appendChild(assistantRow);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            setTimeout(() => {
+                const smartResponse = generateAIAnswer(messageText, userRole, currentCategory);
+                textNode.innerHTML = formatAIResponse(smartResponse);
+
+                saveToHistory(messageText, smartResponse);
+
+                const bBtn = document.createElement('button');
+                bBtn.className = 'msg-bookmark-btn';
+                bBtn.title = "Сохранить в закладки";
+                bBtn.innerHTML = `<span class="material-symbols-outlined">bookmark</span>`;
+                if (getBookmarks().some(b => b.text === smartResponse)) bBtn.classList.add('bookmarked');
+                bBtn.onclick = () => toggleBookmark(bBtn, smartResponse, currentCategory);
+
+                textNode.appendChild(bBtn);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 600);
+        }
+
+        function getBookmarks() { return JSON.parse(localStorage.getItem('aulieata_bookmarks')) || []; }
+        function toggleBookmark(buttonElement, textContent, category) {
+            let bookmarks = getBookmarks();
+            const isBookmarked = buttonElement.classList.contains('bookmarked');
+
+            if (isBookmarked) {
+                bookmarks = bookmarks.filter(b => b.text !== textContent);
+                buttonElement.classList.remove('bookmarked');
+            } else {
+                bookmarks.push({ text: textContent, category: category, date: new Date().toLocaleString('ru-RU') });
+                buttonElement.classList.add('bookmarked');
+            }
+            localStorage.setItem('aulieata_bookmarks', JSON.stringify(bookmarks));
+        }
+
+        function removeBookmark(index) {
+            let bookmarks = getBookmarks();
+            bookmarks.splice(index, 1);
+            localStorage.setItem('aulieata_bookmarks', JSON.stringify(bookmarks));
+            renderBookmarks();
+        }
+
+        function renderBookmarks() {
+            const container = document.getElementById('bookmarksContainer');
+            const bookmarks = getBookmarks();
+            if (bookmarks.length === 0) {
+                container.innerHTML = `<div class="mock-view-card">Список закладок пуст. Закрепите важные сообщения с помощью иконки флажка.</div>`;
+                return;
+            }
+            container.innerHTML = "";
+            bookmarks.forEach((b, index) => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.innerHTML = `
+                    <div class="item-meta">${b.category} • ${b.date}</div>
+                    <div>${formatAIResponse(b.text)}</div>
+                    <button class="remove-btn" onclick="removeBookmark(${index})" title="Удалить"><span class="material-symbols-outlined">delete</span></button>
+                `;
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
